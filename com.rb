@@ -80,23 +80,25 @@ class Gtk::PostBox
 
         def post(msg, &block)
           if @target_postbox.options[:image_filename]
-            block.call(:start, msg)
-            Thread.new {
-              begin
-                fp = File.new(@target_postbox.options[:image_filename])
-                msg[:media] = @target_postbox.options[:image_filename]
+            fp = File.new(@target_postbox.options[:image_filename])
+            msg[:media] = @target_postbox.options[:image_filename]
 
-                Service.primary.update_with_media(msg) 
+            Service.primary.update_with_media(msg) { |event, msg|
+puts "ioiiiiiiiiiiiii"
+puts event
 
+begin
+              case event
+              when :success
                 @target_postbox.options[:born_postbox].remove_extra_widget(:image)
-
-                block.call(:success, msg)
-              rescue => e
-                puts e
-                puts e.backtrace
-
-                block.call(:fail, msg)
+                @target_postbox.options[:born_postbox].options.delete(:image_filename)
               end
+rescue => e
+puts e
+puts e.backtrace
+end
+
+              block.call(event, msg)
             }
           else
             post_org(msg, &block)
