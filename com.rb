@@ -1,5 +1,7 @@
+# -*- coding: utf-8 -*-
 
 require File.join(File.dirname(__FILE__), 'update_with_media.rb')
+require File.join(File.dirname(__FILE__), 'penguin.rb')
 
 class Gtk::PostBox
   attr_accessor :options
@@ -84,19 +86,11 @@ class Gtk::PostBox
             msg[:media] = @target_postbox.options[:image_filename]
 
             Service.primary.update_with_media(msg) { |event, msg|
-puts "ioiiiiiiiiiiiii"
-puts event
-
-begin
               case event
               when :success
                 @target_postbox.options[:born_postbox].remove_extra_widget(:image)
                 @target_postbox.options[:born_postbox].options.delete(:image_filename)
               end
-rescue => e
-puts e
-puts e.backtrace
-end
 
               block.call(event, msg)
             }
@@ -111,8 +105,8 @@ end
 
     service_tmp
   end
-  
 end
+
 
 Plugin.create(:com) do
 
@@ -143,7 +137,7 @@ Plugin.create(:com) do
     # 画像ダイアログボタンを追加する
     post.add_extra_button(Gtk::WebIcon.new(File.join(File.dirname(__FILE__), "image.png"), 16, 16)) { |e|
       # ファイルを選択する
-      filename_tmp = Plugin[:update_with_media].choose_image_file
+      filename_tmp = choose_image_file
 
       if filename_tmp
         # プレビューを表示
