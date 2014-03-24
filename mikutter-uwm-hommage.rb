@@ -108,7 +108,7 @@ class Gtk::PostBox
 end
 
 
-Plugin.create(:com) do
+Plugin.create(:mikutter_uwm_hommage) do
 
   # 画像プレビューウィジェット
   def image_preview_widget(post, filename)
