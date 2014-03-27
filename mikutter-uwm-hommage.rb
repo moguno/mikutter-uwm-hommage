@@ -51,8 +51,6 @@ class Gtk::PostBox
 
   # ポストボックス下にウィジェットを追加する
   def add_extra_widget(slug, factory)
-    @extra_widgets ||= Hash.new
-
     if @extra_widgets[slug]
       remove_extra_widget(slug)
     end
@@ -80,7 +78,6 @@ class Gtk::PostBox
   end
   
   def extra_widget(slug)
-    @extra_widgets ||= Hash.new
     @extra_widgets[slug]
   end
   
@@ -152,6 +149,8 @@ class Gtk::PostBox
   
   def initialize(watch, options)
     initialize_org(watch, options)
+    
+    @extra_widgets ||= Hash.new
 
     add_extra_button(Gtk::WebIcon.new(File.join(File.dirname(__FILE__), "image.png"), 16, 16)) { |e|
       # ファイルを選択する
