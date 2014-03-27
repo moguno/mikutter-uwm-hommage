@@ -3,6 +3,35 @@
 require File.join(File.dirname(__FILE__), 'update_with_media.rb')
 require File.join(File.dirname(__FILE__), 'penguin.rb')
 
+class ImageWidget
+  attr_reader :filename
+
+  def initialize(filename)
+    @filename = filename
+  end
+
+  def create(postbox)
+    base = Gtk::HBox.new(false)
+    
+    button = Gtk::Button.new.add(Gtk::WebIcon.new(Skin.get('close.png'), 16, 16))
+
+    button.ssc(:clicked) { |e|
+      postbox.remove_extra_widget(:image)
+    }
+
+    image_area = Gtk::WebIcon.new(@filename, 100, 100)
+    image_area.height_request = 100
+
+    base.pack_start(button, false)
+    base.pack_start(image_area)
+
+    base.show_all
+    
+    base
+  end
+end
+
+
 class Gtk::PostBox
   attr_accessor :options
 
@@ -21,18 +50,20 @@ class Gtk::PostBox
   end
 
   # ポストボックス下にウィジェットを追加する
-  def add_extra_widget(slug, widget)
+  def add_extra_widget(slug, factory)
     @extra_widgets ||= Hash.new
 
     if @extra_widgets[slug]
       remove_extra_widget(slug)
     end
 
-    @extra_widgets[slug] = widget
+    @extra_widgets[slug] = { :factory => factory, :widget => factory.create(self) }
 
     if !@extra_box.destroyed?
-      @extra_box.pack_start(widget)
+      @extra_box.pack_start(@extra_widgets[slug][:widget])
+      puts "uuuuu"
     end
+    puts "oooooooooo"
   end
 
   # ポストボックス下のウィジェットを削除する
@@ -42,12 +73,24 @@ class Gtk::PostBox
     end
 
     if !@extra_box.destroyed?
-      @extra_box.remove(@extra_widgets[slug])
+      @extra_box.remove(@extra_widgets[slug][:widget])
     end
 
     @extra_widgets.delete(slug)
   end
-
+  
+  def extra_widget(slug)
+    @extra_widgets ||= Hash.new
+    @extra_widgets[slug]
+  end
+  
+  def give_extra_widgets!(to_post)
+    @extra_widgets.each { |slug, info|
+      remove_extra_widget(slug)
+      to_post.add_extra_widget(slug, info[:factory])
+    }
+  end
+  
   # ポストボックス生成
   alias generate_box_org generate_box
 
@@ -72,24 +115,23 @@ class Gtk::PostBox
     service_tmp = service_org
 
     if !service_tmp.methods.include?(:post_org)
+
       service_tmp.instance_eval {
-        def target_postbox=(postbox)
-          @target_postbox = postbox
+        def postbox=(postbox)
+          @postbox = postbox
         end
 
         # 投稿する
         alias :post_org :post
 
         def post(msg, &block)
-          if @target_postbox.options[:image_filename]
-            fp = File.new(@target_postbox.options[:image_filename])
-            msg[:media] = @target_postbox.options[:image_filename]
+          if @postbox.extra_widget(:image)
+            msg[:media] = @postbox.extra_widget(:image)[:factory].filename
 
             Service.primary.update_with_media(msg) { |event, msg|
               case event
               when :success
-                @target_postbox.options[:born_postbox].remove_extra_widget(:image)
-                @target_postbox.options[:born_postbox].options.delete(:image_filename)
+                @postbox.remove_extra_widget(:image)
               end
 
               block.call(event, msg)
@@ -100,51 +142,44 @@ class Gtk::PostBox
         end
       }
     end
-
-    service_tmp.target_postbox = self
+    
+    service_tmp.postbox = self
 
     service_tmp
+  end
+  
+  alias initialize_org initialize
+  
+  def initialize(watch, options)
+    initialize_org(watch, options)
+
+    add_extra_button(Gtk::WebIcon.new(File.join(File.dirname(__FILE__), "image.png"), 16, 16)) { |e|
+      # ファイルを選択する
+      filename_tmp = choose_image_file()
+
+      if filename_tmp
+        # プレビューを表示
+        add_extra_widget(:image, ImageWidget.new(filename_tmp))
+      end
+    }
+    
+    if options[:delegated_by]
+      options[:delegated_by].give_extra_widgets!(self)
+    end
+  end
+  
+  def freeze()
+    @frozen = true
+    self
+  end
+  
+  def frozen?
+    @frozen ||= false
+    @frozen
   end
 end
 
 
 Plugin.create(:mikutter_uwm_hommage) do
 
-  # 画像プレビューウィジェット
-  def image_preview_widget(post, filename)
-    base = Gtk::HBox.new(false)
-
-    button = Gtk::Button.new.add(Gtk::WebIcon.new(Skin.get('close.png'), 16, 16))
-
-    button.ssc(:clicked) { |e|
-      post.options[:image_filename] = nil
-      post.remove_extra_widget(:image)
-    }
-
-    image_area = Gtk::WebIcon.new(filename, 100, 100)
-    image_area.height_request = 100
-
-    base.pack_start(button, false)
-    base.pack_start(image_area)
-
-    base.show_all
-  end
-
-  # ポストボックスが追加されたとき
-  on_gui_postbox_join_widget do |i_postbox|
-    post = Plugin[:gtk].widgetof(i_postbox)
-
-    # 画像ダイアログボタンを追加する
-    post.add_extra_button(Gtk::WebIcon.new(File.join(File.dirname(__FILE__), "image.png"), 16, 16)) { |e|
-      # ファイルを選択する
-      filename_tmp = choose_image_file
-
-      if filename_tmp
-        # プレビューを表示
-        post.add_extra_widget(:image, image_preview_widget(post, filename_tmp))
-        post.options[:image_filename] = filename_tmp
-        post.options[:born_postbox] = post
-      end
-    }
-  end
 end
