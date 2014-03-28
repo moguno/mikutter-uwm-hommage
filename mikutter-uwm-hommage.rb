@@ -212,7 +212,15 @@ class Gtk::PostBox
   alias post_is_empty_org? post_is_empty?
   
   def post_is_empty?
-    post_is_empty_org? && !@extra_widgets[:image] 
+    empty = post_is_empty_org?
+  
+    if empty
+      if @extra_widgets[:image]
+        empty = false
+      end
+    end
+    
+    empty
   end
   
   
