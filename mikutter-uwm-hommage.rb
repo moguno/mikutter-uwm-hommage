@@ -4,13 +4,18 @@ require File.join(File.dirname(__FILE__), 'update_with_media.rb')
 require File.join(File.dirname(__FILE__), 'penguin.rb')
 
 
+# 画像プレビューウィジェット
 class ImageWidgetFactory
   attr_reader :filename
 
+
+  # コンストラクタ
   def initialize(filename)
     @filename = filename
   end
 
+
+  # ウィジェットを生成する
   def create(postbox)
     base = Gtk::HBox.new(false)
     
@@ -79,6 +84,8 @@ class Gtk::PostBox
     @extra_widgets.delete(slug)
   end
   
+
+  # ポストボックス下のウィジェットを返す
   def extra_widget(slug)
     @extra_widgets[slug]
   end
