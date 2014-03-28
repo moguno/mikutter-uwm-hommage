@@ -65,9 +65,7 @@ class Gtk::PostBox
 
     if !@extra_box.destroyed?
       @extra_box.pack_start(@extra_widgets[slug][:widget])
-      puts "uuuuu"
     end
-    puts "oooooooooo"
   end
 
   # ポストボックス下のウィジェットを削除する
