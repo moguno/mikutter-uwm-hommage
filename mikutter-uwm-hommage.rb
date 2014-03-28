@@ -152,6 +152,43 @@ class Gtk::PostBox
   end
   
   
+  alias start_post_org start_post
+  
+  def start_post
+    start_post_org
+
+    if @extra_widgets[:image]
+      @extra_widgets[:image][:widget].sensitive = false
+    end
+    
+    @extra_buttons[:post_media].sensitive = false
+  end
+  
+  
+  alias end_post_org end_post
+  
+  def end_post
+    end_post_org
+
+    if @extra_widgets[:image]
+      @extra_widgets[:image][:widget].sensitive = true
+    end
+    
+    @extra_buttons[:post_media].sensitive = true
+  end
+
+
+  alias cancel_post_org cancel_post
+  
+  def cancel_post
+    cancel_post_org
+
+    if options[:delegated_by]
+      give_extra_widgets!(options[:delegated_by])
+    end
+  end
+
+
   alias destroy_if_necessary_org destroy_if_necessary
   
   def destroy_if_necessary(*related_widgets)
@@ -159,13 +196,40 @@ class Gtk::PostBox
   end
   
   
+  alias remain_charcount_org remain_charcount
+  
+  def remain_charcount
+    count = remain_charcount_org()
+    
+    if @extra_widgets[:image]
+      count -= 23
+    else
+      count
+    end
+  end
+  
+  
+  alias post_is_empty_org? post_is_empty?
+  
+  def post_is_empty?
+    post_is_empty_org? && !@extra_widgets[:image] 
+  end
+  
+  
+  alias postable_org? postable?
+  
+  def postable?
+    postable_org? || @extra_widgets[:image]
+  end
+  
+  
   alias initialize_org initialize
   
   def initialize(watch, options)
-    initialize_org(watch, options)
-    
     @extra_widgets ||= Hash.new
     @extra_buttons ||= Hash.new
+    
+    initialize_org(watch, options)
 
     add_extra_button(:post_media, Gtk::WebIcon.new(File.join(File.dirname(__FILE__), "image.png"), 16, 16)) { |e|
       # ファイルを選択する
@@ -174,6 +238,7 @@ class Gtk::PostBox
       if filename_tmp
         # プレビューを表示
         add_extra_widget(:image, ImageWidget.new(filename_tmp))
+        refresh_buttons(false)
       end
     }
     
