@@ -36,7 +36,7 @@ class Gtk::PostBox
   attr_accessor :options
 
   # ポストボックス右端にボタンを追加する
-  def add_extra_button(inner_widget, &clicked)
+  def add_extra_button(slug, inner_widget, &clicked)
     button = Gtk::Button.new.add(inner_widget)
     inner_widget.height_request = 16
     inner_widget.width_request = 16
@@ -47,6 +47,12 @@ class Gtk::PostBox
     if !@extra_button_area.destroyed?
       @extra_button_area.pack_start(button, false)
     end
+    
+    @extra_buttons[slug] = button
+  end
+  
+  def extra_buttons(slug)
+    @extra_buttons[slug]
   end
 
   # ポストボックス下にウィジェットを追加する
@@ -145,14 +151,23 @@ class Gtk::PostBox
     service_tmp
   end
   
+  
+  alias destroy_if_necessary_org destroy_if_necessary
+  
+  def destroy_if_necessary(*related_widgets)
+    destroy_if_necessary_org(*related_widgets, extra_buttons(:post_media))
+  end
+  
+  
   alias initialize_org initialize
   
   def initialize(watch, options)
     initialize_org(watch, options)
     
     @extra_widgets ||= Hash.new
+    @extra_buttons ||= Hash.new
 
-    add_extra_button(Gtk::WebIcon.new(File.join(File.dirname(__FILE__), "image.png"), 16, 16)) { |e|
+    add_extra_button(:post_media, Gtk::WebIcon.new(File.join(File.dirname(__FILE__), "image.png"), 16, 16)) { |e|
       # ファイルを選択する
       filename_tmp = choose_image_file()
 
