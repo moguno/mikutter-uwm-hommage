@@ -39,6 +39,15 @@ class MikuTwitter
       }
 
       request_body = ""
+     
+      if message[:replyto]
+        request_body << "--#{boundary}\r\n"
+        request_body << "Content-Disposition: form-data; name=\"in_reply_to_status_id\";\r\n"
+        request_body << "Content-Type: text/plain; charset=UTF-8\r\n"
+        request_body << "\r\n"
+        request_body << "#{message[:replyto][:id]}\r\n"
+      end
+
       request_body << "--#{boundary}\r\n"
       request_body << "Content-Disposition: form-data; name=\"status\";\r\n"
       request_body << "Content-Type: text/plain; charset=UTF-8\r\n"

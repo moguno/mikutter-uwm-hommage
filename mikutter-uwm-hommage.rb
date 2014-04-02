@@ -135,6 +135,11 @@ class Gtk::PostBox
         alias :post_org :post
 
         def post(msg, &block)
+          if self.is_a?(Message)
+            msg[:replyto] = self
+            msg[:receiver] = self[:user]
+          end
+
           if @postbox.extra_widget(:image)
             msg[:media] = @postbox.extra_widget(:image)[:factory].filename
 
