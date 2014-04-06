@@ -198,8 +198,8 @@ class Gtk::PostBox
   def cancel_post
     cancel_post_org
 
-    if options[:delegated_by]
-      give_extra_widgets!(options[:delegated_by])
+    if @options[:delegated_by]
+      give_extra_widgets!(@options[:delegated_by])
     end
   end
 
