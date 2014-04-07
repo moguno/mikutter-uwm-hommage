@@ -173,8 +173,10 @@ class Gtk::PostBox
     if @extra_widgets[:image]
       @extra_widgets[:image][:widget].sensitive = false
     end
-    
-    @extra_buttons[:post_media].sensitive = false
+
+    if !@extra_buttons[:post_media].destroyed?
+      @extra_buttons[:post_media].sensitive = false
+    end
   end
   
  
@@ -188,7 +190,9 @@ class Gtk::PostBox
       @extra_widgets[:image][:widget].sensitive = true
     end
     
-    @extra_buttons[:post_media].sensitive = true
+    if !@extra_buttons[:post_media].destroyed?
+      @extra_buttons[:post_media].sensitive = true
+    end
   end
 
 
