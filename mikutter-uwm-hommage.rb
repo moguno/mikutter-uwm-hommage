@@ -299,4 +299,23 @@ end
 
 Plugin.create(:mikutter_uwm_hommage) do
 
+  command(:uwm_hommage,
+    name: '画像を添付',
+    condition: lambda{ |opt| true },
+    visible: true,
+    role: :postbox
+  ) do |opt|
+    begin
+      # ファイルを選択する
+      filename_tmp = choose_image_file()
+
+      if filename_tmp
+        # プレビューを表示
+        widget = Plugin[:gtk].widgetof(opt.widget)
+        widget.add_extra_widget(:image, ImageWidgetFactory.new(filename_tmp))
+        widget.refresh_buttons(false)
+      end
+    end
+  end
+
 end
