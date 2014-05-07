@@ -16,10 +16,12 @@ end
 class MikuTwitter
   # 画像付きツイート
   def update_with_media(message)
-    mimes = [
-      [/\.png$/, "image/png"],
-      [/\.jpe?g$/, "image/jpeg"],
-      [/\.gif$/, "image/gif"],
+    file_types = [
+      { :re => /\.png$/, :mime => "image/png" },
+      { :re => /\.jpe?g$/, :mime => "image/jpeg" },
+      { :re => /\.gif$/, :mime => "image/png", :open => lambda { |filename|
+        Gdk::Pixbuf.new(filename).save_to_buffer("png")
+      }},
     ]
 
     Thread.new {
@@ -29,14 +31,7 @@ class MikuTwitter
 
       boundary = 'teokure'
 
-      mime = nil
-
-      mimes.each { |mim|
-        if file =~ mim[0]
-          mime = mim[1]
-          break
-        end
-      }
+      target_type = file_types.find { |type| file =~ type[:re] }
 
       request_body = ""
      
@@ -55,14 +50,16 @@ class MikuTwitter
       request_body << "#{message[:message]}\r\n"
       request_body << "--#{boundary}\r\n"
       request_body << "Content-Disposition: form-data; name=\"media[]\"; filename=\"teokure\"\r\n"
-      request_body << "Content-Type: #{mime}\r\n"
+      request_body << "Content-Type: #{target_type[:mime]}\r\n"
       request_body << "Content-Transfer-Encoding: binary\r\n"
       request_body << "\r\n"
 
-      File.open(file, 'rb') { |fp|
-        request_body.force_encoding("ASCII-8BIT")
-        request_body << fp.read
-      }
+      request_body.force_encoding("ASCII-8BIT")
+      request_body << if target_type[:open]
+        target_type[:open].call(file)
+      else
+        File.open(file, 'rb') { |fp| fp.read }
+      end
 
       request_body << "\r\n"
       request_body << "--#{boundary}--\r\n"
