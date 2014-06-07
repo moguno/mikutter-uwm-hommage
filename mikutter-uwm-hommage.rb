@@ -302,6 +302,7 @@ Plugin.create(:mikutter_uwm_hommage) do
   command(:uwm_hommage,
     name: '画像を添付',
     condition: lambda{ |opt| true },
+    icon: File.join(File.dirname(__FILE__), "image.png"),
     visible: true,
     role: :postbox
   ) do |opt|
