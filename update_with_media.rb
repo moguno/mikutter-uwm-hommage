@@ -17,9 +17,9 @@ class MikuTwitter
   # 画像付きツイート
   def update_with_media(message)
     file_types = [
-      { :re => /\.png$/, :mime => "image/png" },
-      { :re => /\.jpe?g$/, :mime => "image/jpeg" },
-      { :re => /\.gif$/, :mime => "image/png", :open => lambda { |filename|
+      { :re => /\.png$/i, :mime => "image/png" },
+      { :re => /\.jpe?g$/i, :mime => "image/jpeg" },
+      { :re => /\.gif$/i, :mime => "image/png", :open => lambda { |filename|
         Gdk::Pixbuf.new(filename).save_to_buffer("png")
       }},
     ]
