@@ -298,7 +298,16 @@ end
 
 
 Plugin.create(:mikutter_uwm_hommage) do
+  # 設定
+  settings("画像アップロード") do
+    settings("お気に入り") do
+      10.times { |i|
+        input("ディレクトリ#{i + 1}", "galary_dir#{i + 1}".to_sym)
+      }
+    end
+  end
 
+  # コマンド
   command(:uwm_hommage,
     name: '画像を添付',
     condition: lambda{ |opt| true },
