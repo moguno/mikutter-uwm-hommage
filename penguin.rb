@@ -20,6 +20,19 @@ def choose_image_file
   filter.add_pattern('*.GIF')
   dialog.add_filter(filter)
 
+  10.times.map { |i|
+    UserConfig["galary_dir#{i + 1}".to_sym]
+  }.compact.select { |dir|
+    !dialog.shortcut_folders.include?(dir)
+  }.each { |dir|
+    begin
+      dialog.add_shortcut_folder(dir)
+    rescue => e
+      puts e
+      puts e.backtrace
+    end
+  }
+
   preview = Gtk::Image.new
   dialog.preview_widget = preview
   dialog.signal_connect("update-preview") {
