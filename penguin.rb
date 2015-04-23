@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-def choose_image_file
+def choose_image_file(multi_select = false)
   dialog = Gtk::FileChooserDialog.new("Select Upload Image",
                                       nil,
                                       Gtk::FileChooser::ACTION_OPEN,
@@ -19,6 +19,10 @@ def choose_image_file
   filter.add_pattern('*.gif')
   filter.add_pattern('*.GIF')
   dialog.add_filter(filter)
+
+  if multi_select
+    dialog.select_multiple = true
+  end
 
   10.times.map { |i|
     UserConfig["galary_dir#{i + 1}".to_sym]
@@ -50,14 +54,13 @@ def choose_image_file
     end
   }
 
-  if dialog.run == Gtk::Dialog::RESPONSE_ACCEPT
-    filename = dialog.filename.to_s
-    puts filename
+  filenames = if dialog.run == Gtk::Dialog::RESPONSE_ACCEPT
+    dialog.filenames
   else
     filename = nil
   end
 
   dialog.destroy
 
-  filename
+  filenames
 end

@@ -1,22 +1,102 @@
 # -*- coding: utf-8 -*-
 
-require File.join(File.dirname(__FILE__), 'update_with_media.rb')
+#require File.join(File.dirname(__FILE__), 'update_with_media.rb')
+require File.join(File.dirname(__FILE__), 'imagebox.rb')
 require File.join(File.dirname(__FILE__), 'penguin.rb')
+
+
+class Service
+  # 画像付きツイート
+  def update_with_media_moguno(message, filenames, &block)
+    block.call(:start, [message, filenames])
+    block.call(:try, [message, filenames])
+
+    threads = filenames.map { |filename|
+      file_types = [
+        { :re => /\.png$/i, :mime => "image/png" },
+        { :re => /\.jpe?g$/i, :mime => "image/jpeg" },
+        { :re => /\.gif$/i, :mime => "image/png", :open => lambda { |filename|
+          Gdk::Pixbuf.new(filename).save_to_buffer("png")
+        }},
+      ]
+
+      post_data = {}
+
+      type = file_types.find { |_| _[:re] =~ filename }
+
+      image_bin = if type[:open]
+        type[:open].call(filename)
+      else
+        File.open(filename, 'rb') { |fp| fp.read }
+      end
+
+      post_data[:media_data] = Base64.encode64(image_bin)
+
+      upload_media(post_data).next { |_| _ }
+    }
+
+    Deferred.when(*threads).next { |media_infos|
+      media_ids = media_infos.map { |_| _[:media_id] }
+
+      message[:media_ids] = media_ids
+
+      post(message) { |event, result|
+        case event
+        when :success
+          block.call(:success, result)
+        when :err
+          block.call(:err, result)
+        when :fail
+          block.call(:fail, result)
+        when :exit
+          block.call(:exit, result)
+        end
+      }
+    }.trap { |e|
+      puts e
+      puts e.backtrace
+
+      block.call(:err, e)
+      block.call(:fail, e)
+      block.call(:exit, nil)
+    }
+  end
+end
 
 
 # 画像プレビューウィジェット
 class ImageWidgetFactory
-  attr_reader :filename
+
+
+  # ファイル名を返す
+  def filenames
+    @image_boxes.map { |_| _.filename }.compact
+  end
+
+
+  # イメージなし画像を返す
+  def noimage_file
+    plugin_skin_dir = File.join(Plugin[:"mikutter-uwm-hommage"].spec[:path], "skin")
+    Skin.get("noimage.png", [plugin_skin_dir])
+  end
 
 
   # コンストラクタ
-  def initialize(filename)
-    @filename = filename
+  def initialize(filenames)
+    @default_filenames = filenames
   end
 
 
   # ウィジェットを生成する
   def create(postbox)
+    target_filenames = if !@image_boxes.empty?
+      filenames
+    else
+      @default_filenames
+    end
+
+    @image_boxes = []
+
     base = Gtk::HBox.new(false)
     
     button = Gtk::Button.new.add(Gtk::WebIcon.new(Skin.get('close.png'), 16, 16))
@@ -25,11 +105,43 @@ class ImageWidgetFactory
       postbox.remove_extra_widget(:image)
     }
 
-    image_area = Gtk::WebIcon.new(@filename, 100, 100)
-    image_area.height_request = 100
+    image_area = []
+
+    left_box = nil
+
+    4.times { |i|
+      image_box = Gtk::ImageBox.new(target_filenames[i], noimage_file)
+      image_box.left = left_box
+
+      if left_box
+        left_box.right = image_box
+      end
+
+      @image_boxes << image_box
+      image_area << image_box.widget
+
+      left_box = image_box
+    }
 
     base.pack_start(button, false)
-    base.pack_start(image_area)
+
+    box = Gtk::HBox.new(false, 3)
+
+    image_area.each { |area|
+      box.pack_start(area, false)
+    }
+    
+    viewport = Gtk::Viewport.new(nil, nil)
+    viewport.shadow_type = Gtk::ShadowType::NONE
+    viewport.add(box)
+
+    layout = Gtk::ScrolledWindow.new
+    layout.shadow_type = Gtk::ShadowType::NONE
+    layout.vscrollbar_policy = Gtk::POLICY_NEVER
+    layout.hscrollbar_policy = Gtk::POLICY_ALWAYS
+    layout.add(viewport)
+
+    base.pack_start(layout)
 
     base.show_all
     
@@ -118,6 +230,7 @@ class Gtk::PostBox
   end
 
 
+
   # 投稿用のサービスを返す
   alias service_org service
 
@@ -127,6 +240,7 @@ class Gtk::PostBox
     if !service_tmp.methods.include?(:post_org)
 
       service_tmp.instance_eval {
+
         def postbox=(postbox)
           @postbox = postbox
         end
@@ -140,10 +254,9 @@ class Gtk::PostBox
             msg[:receiver] = self[:user]
           end
 
-          if @postbox.extra_widget(:image)
-            msg[:media] = @postbox.extra_widget(:image)[:factory].filename
-
-            Service.primary.update_with_media(msg) { |event, msg|
+          if @postbox.extra_widget(:image) && !@postbox.extra_widget(:image)[:factory].filenames.empty?
+            
+            Service.primary.update_with_media_moguno(msg, @postbox.extra_widget(:image)[:factory].filenames) { |event, msg| 
               case event
               when :success
                 @postbox.remove_extra_widget(:image)
@@ -281,11 +394,11 @@ class Gtk::PostBox
 
     add_extra_button(:post_media, Gtk::WebIcon.new(File.join(File.dirname(__FILE__), "image.png"), 16, 16)) { |e|
       # ファイルを選択する
-      filename_tmp = choose_image_file()
+      filenames_tmp = choose_image_file(true)
 
-      if filename_tmp
+      if filenames_tmp
         # プレビューを表示
-        add_extra_widget(:image, ImageWidgetFactory.new(filename_tmp))
+        add_extra_widget(:image, ImageWidgetFactory.new(filenames_tmp))
         refresh_buttons(false)
       end
     }
@@ -297,7 +410,7 @@ class Gtk::PostBox
 end
 
 
-Plugin.create(:mikutter_uwm_hommage) do
+Plugin.create(:"mikutter-uwm-hommage") do
   # 設定
   settings("画像アップロード") do
     settings("お気に入り") do
@@ -317,7 +430,7 @@ Plugin.create(:mikutter_uwm_hommage) do
   ) do |opt|
     begin
       # ファイルを選択する
-      filename_tmp = choose_image_file()
+      filename_tmp = choose_image_file(true)
 
       if filename_tmp
         # プレビューを表示
