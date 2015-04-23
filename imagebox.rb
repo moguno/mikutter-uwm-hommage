@@ -19,19 +19,11 @@ class Gtk::ImageBox
       @noimage_file
     end
 
-puts "---"
-puts image_file
-
-begin
     if @image_widget.child
       @image_widget.remove(@image_widget.child)
     end
 
     @image_widget.add(Gtk::WebIcon.new(image_file, 100, 100)).show_all
-rescue => e
-puts e
-puts e.backtrace
-end
   end
 
   def swap_left_image
@@ -93,7 +85,6 @@ end
       @image_widget = Gtk::EventBox.new
 
       @image_widget.ssc(:button_press_event) { |w, e|
-begin
         filenames_tmp = choose_image_file(false)
 
         filename = if filenames_tmp
@@ -103,12 +94,6 @@ begin
         end
 
         set_filename(filename)
-
-puts "/////////////////"
-rescue => e
-puts e
-puts e.backtrace
-end
       }
 
       @image_container.pack_start(@image_widget)
