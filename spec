@@ -1,7 +1,7 @@
 ---
 slug: :mikutter-uwm-hommage
 depends:
-  mikutter: 3.2
+  mikutter: 3.2.0
   plugin:
   - gtk
 version: 0.4.0
