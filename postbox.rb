@@ -105,7 +105,7 @@ class Gtk::PostBox
 
           if @postbox.extra_widget(:image) && !@postbox.extra_widget(:image)[:factory].filenames.empty?
             
-            Service.primary.update_with_media_moguno(msg, @postbox.extra_widget(:image)[:factory].filenames) { |event, msg| 
+            Service.primary.update_with_media(msg, @postbox.extra_widget(:image)[:factory].filenames) { |event, msg| 
               case event
               when :success
                 @postbox.remove_extra_widget(:image)
