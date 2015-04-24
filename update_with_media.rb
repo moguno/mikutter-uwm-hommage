@@ -1,77 +1,59 @@
 # -*- coding: utf-8 -*-
 
 class Service
-  # update_with_mediaにコールバック機構を付与
-  define_postal(:update_with_media){ |parent, service, options|
-    parent.call(options).next{ |message|
-      notice 'event fire :posted and :update by statuses/update'
-      Plugin.call(:posted, service, [message])
-      Plugin.call(:update, service, [message])
-      message
-    }
-  }
-end
-
-
-class MikuTwitter
   # 画像付きツイート
-  def update_with_media(message)
-    file_types = [
-      { :re => /\.png$/i, :mime => "image/png" },
-      { :re => /\.jpe?g$/i, :mime => "image/jpeg" },
-      { :re => /\.gif$/i, :mime => "image/png", :open => lambda { |filename|
-        Gdk::Pixbuf.new(filename).save_to_buffer("png")
-      }},
-    ]
+  def update_with_media(message, filenames, &block)
+    block.call(:start, [message, filenames])
+    block.call(:try, [message, filenames])
 
-    Thread.new {
-      uri = URI.parse('https://api.twitter.com/1.1/statuses/update_with_media.json')
+    threads = filenames.map { |filename|
+      file_types = [
+        { :re => /\.png$/i, :mime => "image/png" },
+        { :re => /\.jpe?g$/i, :mime => "image/jpeg" },
+        { :re => /\.gif$/i, :mime => "image/png", :open => lambda { |filename|
+          Gdk::Pixbuf.new(filename).save_to_buffer("png")
+        }},
+      ]
 
-      file = message[:media]
+      post_data = {}
 
-      boundary = 'teokure'
+      type = file_types.find { |_| _[:re] =~ filename }
 
-      target_type = file_types.find { |type| file =~ type[:re] }
-
-      request_body = ""
-     
-      if message[:replyto]
-        request_body << "--#{boundary}\r\n"
-        request_body << "Content-Disposition: form-data; name=\"in_reply_to_status_id\";\r\n"
-        request_body << "Content-Type: text/plain; charset=UTF-8\r\n"
-        request_body << "\r\n"
-        request_body << "#{message[:replyto][:id]}\r\n"
-      end
-
-      request_body << "--#{boundary}\r\n"
-      request_body << "Content-Disposition: form-data; name=\"status\";\r\n"
-      request_body << "Content-Type: text/plain; charset=UTF-8\r\n"
-      request_body << "\r\n"
-      request_body << "#{message[:message]}\r\n"
-      request_body << "--#{boundary}\r\n"
-      request_body << "Content-Disposition: form-data; name=\"media[]\"; filename=\"teokure\"\r\n"
-      request_body << "Content-Type: #{target_type[:mime]}\r\n"
-      request_body << "Content-Transfer-Encoding: binary\r\n"
-      request_body << "\r\n"
-
-      request_body.force_encoding("ASCII-8BIT")
-      request_body << if target_type[:open]
-        target_type[:open].call(file)
+      image_bin = if type[:open]
+        type[:open].call(filename)
       else
-        File.open(file, 'rb') { |fp| fp.read }
+        File.open(filename, 'rb') { |fp| fp.read }
       end
 
-      request_body << "\r\n"
-      request_body << "--#{boundary}--\r\n"
+      post_data[:media_data] = Base64.encode64(image_bin)
 
-      head = {}
-      head["Content-Type"] = "multipart/form-data; boundary=#{boundary}"
-      head["Content-Length"] = request_body.bytesize.to_s
+      upload_media(post_data).next { |_| _ }
+    }
 
-      response = access_token.post(uri.to_s, request_body, head)
+    Deferred.when(*threads).next { |media_infos|
+      media_ids = media_infos.map { |_| _[:media_id] }
 
-      #Message.new(JSON.parse(response.body).symbolize)
-      Request::Parser.message(JSON.parse(response.body).symbolize)
+      message[:media_ids] = media_ids
+
+      post(message) { |event, result|
+        case event
+        when :success
+          block.call(:success, result)
+        when :err
+          block.call(:err, result)
+        when :fail
+          block.call(:fail, result)
+        when :exit
+          block.call(:exit, result)
+        end
+      }
+    }.trap { |e|
+      puts e
+      puts e.backtrace
+
+      block.call(:err, e)
+      block.call(:fail, e)
+      block.call(:exit, nil)
     }
   end
 end
