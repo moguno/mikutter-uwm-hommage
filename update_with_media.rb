@@ -3,8 +3,10 @@
 class Service
   # 画像付きツイート
   def update_with_media(message, filenames, &block)
-    block.call(:start, [message, filenames])
-    block.call(:try, [message, filenames])
+    if block
+      block.call(:start, [message, filenames])
+      block.call(:try, [message, filenames])
+    end
 
     threads = filenames.map { |filename|
       file_types = [
@@ -36,24 +38,28 @@ class Service
       message[:media_ids] = media_ids
 
       post(message) { |event, result|
-        case event
-        when :success
-          block.call(:success, result)
-        when :err
-          block.call(:err, result)
-        when :fail
-          block.call(:fail, result)
-        when :exit
-          block.call(:exit, result)
+        if block
+          case event
+          when :success
+            block.call(:success, result)
+          when :err
+            block.call(:err, result)
+          when :fail
+            block.call(:fail, result)
+          when :exit
+            block.call(:exit, result)
+          end
         end
       }
     }.trap { |e|
       puts e
       puts e.backtrace
 
-      block.call(:err, e)
-      block.call(:fail, e)
-      block.call(:exit, nil)
+      if block
+        block.call(:err, e)
+        block.call(:fail, e)
+        block.call(:exit, nil)
+      end
     }
   end
 end
