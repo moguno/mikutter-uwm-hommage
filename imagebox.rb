@@ -78,10 +78,6 @@ class Gtk::ImageBox
         swap_right_image
       }
 
-      buttonbox = Gtk::HBox.new(false)
-
-      @image_container.pack_start(@image_widget)
-
       @image_widget = Gtk::EventBox.new
 
       @image_widget.ssc(:button_press_event) { |w, e|
@@ -98,6 +94,8 @@ class Gtk::ImageBox
 
       @image_container.pack_start(@image_widget)
  
+      buttonbox = Gtk::HBox.new(false)
+
       buttonbox.pack_start(button_left, false)
       buttonbox.pack_start(button_delete)
       buttonbox.pack_start(button_right, false)
