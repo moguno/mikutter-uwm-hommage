@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 class Service
+
   # 画像付きツイート
   def update_with_media(message, filenames, &block)
     if block
@@ -8,28 +9,22 @@ class Service
       block.call(:try, [message, filenames])
     end
 
-    threads = filenames.map { |filename|
+    threads = filenames.map {|filename|
       file_types = [
         { :re => /\.png$/i, :mime => "image/png" },
         { :re => /\.jpe?g$/i, :mime => "image/jpeg" },
-        { :re => /\.gif$/i, :mime => "image/png", :open => lambda { |filename|
-          Gdk::Pixbuf.new(filename).save_to_buffer("png")
-        }},
+        { :re => /\.gif$/i, :mime => "image/gif"},
       ]
-
-      post_data = {}
 
       type = file_types.find { |_| _[:re] =~ filename }
 
-      image_bin = if type[:open]
+      image_io = if type[:open]
         type[:open].call(filename)
       else
-        File.open(filename, 'rb') { |fp| fp.read }
+        File.open(filename, 'rb')
       end
 
-      post_data[:media_data] = Base64.encode64(image_bin)
-
-      upload_media(post_data).next { |_| _ }
+      upload_media(image_io)
     }
 
     Deferred.when(*threads).next { |media_infos|

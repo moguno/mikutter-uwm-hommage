@@ -8,6 +8,13 @@ class ImageWidgetFactory
     @image_boxes.map { |_| _.filename }.compact
   end
 
+  # アップロードされる画像のFileを返す
+  def files
+    filenames.map do |name|
+      File.open(name, 'rb')
+    end
+  end
+
   # イメージなし画像を返す
   def noimage_file
     Plugin[:"mikutter-uwm-hommage"].get_skin("noimage.png")
