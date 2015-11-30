@@ -14,10 +14,9 @@ class Gtk::PostBox
     if !@extra_button_area.destroyed?
       @extra_button_area.pack_start(button, false)
     end
-    
+
     @extra_buttons[slug] = button
   end
-  
 
   # ポストボックス下にウィジェットを追加する
   def add_extra_widget(slug, factory)
@@ -45,13 +44,13 @@ class Gtk::PostBox
 
     @extra_widgets.delete(slug)
   end
-  
+
 
   # ポストボックス下のウィジェットを返す
   def extra_widget(slug)
     @extra_widgets[slug]
   end
-  
+
 
   # 別のポストボックスにポストボックス下のウィジェットを移植する
   def give_extra_widgets!(to_post)
@@ -60,7 +59,7 @@ class Gtk::PostBox
       to_post.add_extra_widget(slug, info[:factory])
     }
   end
-  
+
 
   # ポストボックス生成
   alias generate_box_org generate_box
@@ -79,56 +78,28 @@ class Gtk::PostBox
     @extra_box.add(post_box)
   end
 
+  def post_it
+    if postable?
+      return unless before_post
+      text = widget_post.buffer.text
+      if respond_to?(:use_blind_footer?, true)
+        text += UserConfig[:footer] if use_blind_footer?
+      else
+        text += UserConfig[:footer] if add_footer? end
+      image_widget = self.extra_widget(:image)
+      mediaiolist = image_widget ? image_widget[:factory].files : nil
+      @posting = service.post(message: text, mediaiolist: mediaiolist){ |event, msg|
+        case event
+        when :start
+          Delayer.new{ start_post }
+        when :fail
+          Delayer.new{ end_post }
+        when :success
+          Delayer.new{ destroy } end } end end
 
-  # 投稿用のサービスを返す
-  alias service_org service
-
-  def service
-    service_tmp = service_org
-
-    if !service_tmp.methods.include?(:post_org)
-
-      service_tmp.instance_eval {
-
-        def postbox=(postbox)
-          @postbox = postbox
-        end
-
-        # 投稿する
-        alias :post_org :post
-
-        def post(msg, &block)
-          if self.is_a?(Message)
-            msg[:replyto] = self
-            msg[:receiver] = self[:user]
-          end
-
-          if @postbox.extra_widget(:image) && !@postbox.extra_widget(:image)[:factory].filenames.empty?
-            
-            Service.primary.update_with_media(msg, @postbox.extra_widget(:image)[:factory].filenames) { |event, msg| 
-              case event
-              when :success
-                @postbox.remove_extra_widget(:image)
-              end
-
-              block.call(event, msg)
-            }
-          else
-            post_org(msg, &block)
-          end
-        end
-      }
-    end
-    
-    service_tmp.postbox = self
-
-    service_tmp
-  end
-  
-  
   # 投稿開始
   alias start_post_org start_post
-  
+
   def start_post
     start_post_org
 
@@ -140,18 +111,17 @@ class Gtk::PostBox
       @extra_buttons[:post_media].sensitive = false
     end
   end
-  
- 
-  # 投稿完了 
+
+  # 投稿完了
   alias end_post_org end_post
-  
+
   def end_post
     end_post_org
 
     if @extra_widgets[:image]
       @extra_widgets[:image][:widget].sensitive = true
     end
-    
+
     if !@extra_buttons[:post_media].destroyed?
       @extra_buttons[:post_media].sensitive = true
     end
@@ -160,7 +130,7 @@ class Gtk::PostBox
 
   # 投稿キャンセル
   alias cancel_post_org cancel_post
-  
+
   def cancel_post
     cancel_post_org
 
@@ -172,49 +142,49 @@ class Gtk::PostBox
 
   # フォーカスが外れた時に返信ボックスを削除する
   alias destroy_if_necessary_org destroy_if_necessary
-  
+
   def destroy_if_necessary(*related_widgets)
     destroy_if_necessary_org(*related_widgets, @extra_buttons[:post_media])
   end
-  
-  
+
+
   # 残り文字数
   alias remain_charcount_org remain_charcount
-  
+
   def remain_charcount
     count = remain_charcount_org()
-    
+
     if @extra_widgets[:image]
       count -= 23
     else
       count
     end
   end
-  
- 
-  # ぽすとぼっくす空なん？ 
+
+
+  # ぽすとぼっくす空なん？
   alias post_is_empty_org? post_is_empty?
-  
+
   def post_is_empty?
     empty = post_is_empty_org?
-  
+
     if empty
       if @extra_widgets[:image]
         empty = false
       end
     end
-    
+
     empty
   end
-  
-  
+
+
   # 投稿してええん？
   alias postable_org? postable?
-  
+
   def postable?
     postable_org? || @extra_widgets[:image]
   end
-  
+
 
   #                           ・・・・・
   # お前の凍結能力は俺の能力で既に無効化されていた。
@@ -222,24 +192,24 @@ class Gtk::PostBox
     @frozen = true
     self
   end
-  
+
 
   #           ・・                        ・・・・・・・
   # そして俺は凍結されたふりをした。お前は既に負けていたのだ。
   def frozen?
     @frozen ||= false
     @frozen
-  end  
+  end
 
 
   # コンストラクタ
   alias initialize_org initialize
-  
-  def initialize(watch, options)
+
+  def initialize(*args)
     @extra_widgets ||= Hash.new
     @extra_buttons ||= Hash.new
-    
-    initialize_org(watch, options)
+
+    initialize_org(*args)
 
     add_extra_button(:post_media, Gtk::WebIcon.new(Plugin[:"mikutter-uwm-hommage"].get_skin("image.png"), 16, 16)) { |e|
       # ファイルを選択する
@@ -251,11 +221,9 @@ class Gtk::PostBox
         refresh_buttons(false)
       end
     }
-    
-    if options[:delegated_by]
-      options[:delegated_by].give_extra_widgets!(self)
+
+    if @options[:delegated_by]
+      @options[:delegated_by].give_extra_widgets!(self)
     end
   end
 end
-
-
