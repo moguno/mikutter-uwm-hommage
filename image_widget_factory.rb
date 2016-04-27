@@ -8,10 +8,12 @@ class ImageWidgetFactory
     @image_boxes.map { |_| _.filename }.compact
   end
 
-  # アップロードされる画像のFileを返す
+  # アップロードされる画像をIOで返す
   def files
     filenames.map do |name|
-      File.open(name, 'rb')
+      File.open(name, 'rb') { |fp|
+        StringIO.new(fp.read)
+      }
     end
   end
 
