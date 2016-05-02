@@ -42,7 +42,7 @@ def choose_image_file(multi_select = false)
   dialog.signal_connect("update-preview") {
     filename = dialog.preview_filename
     if filename
-      unless File.directory?(filename)
+      if FileTest.file?(filename) && FileTest.exist?(filename)
         pixbuf = Gdk::Pixbuf.new(filename, 128, 128)
         preview.set_pixbuf(pixbuf)
         dialog.set_preview_widget_active(true)
