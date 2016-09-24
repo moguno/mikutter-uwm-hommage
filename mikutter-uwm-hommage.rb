@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-require File.join(File.dirname(__FILE__), 'media_upload.rb')
+require File.join(File.dirname(__FILE__), 'media_upload.rb') if Environment::VERSION < [3, 3, 0, 0]
 require File.join(File.dirname(__FILE__), 'imagebox.rb')
 require File.join(File.dirname(__FILE__), 'penguin.rb')
 require File.join(File.dirname(__FILE__), 'postbox.rb')
