@@ -38,7 +38,3 @@ module MikuTwitter::Query
     result
   end
 end
-
-class Service
-  define_postal :upload_media
-end
