@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
-
+# mikutter 3.2 以前で画像をアップロードする機能を追加する。
+# mikutter 3.3 以降では、このファイルをロードしてはならない。
 module MikuTwitter::APIShortcuts
   def update(message)
     text = message[:message]
@@ -37,8 +38,4 @@ module MikuTwitter::Query
     result['media']['upload'] = :post
     result
   end
-end
-
-class Service
-  define_postal :upload_media
 end
