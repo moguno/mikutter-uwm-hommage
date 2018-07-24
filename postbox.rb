@@ -183,10 +183,20 @@ class Gtk::PostBox
   def remain_charcount
     count = remain_charcount_org()
 
-    if @extra_widgets[:image]
-      count -= 23
+    if Environment::VERSION < [3, 7, 2, 0]
+      if @extra_widgets[:image]
+        count -= 23
+      else
+        count
+      end
     else
-      count
+      count.next{ |cnt|
+        if @extra_widgets[:image]
+          cnt -= 23
+        else
+          cnt
+        end
+      }
     end
   end
 
