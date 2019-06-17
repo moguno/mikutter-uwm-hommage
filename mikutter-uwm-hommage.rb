@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 
-require File.join(File.dirname(__FILE__), 'media_upload.rb') if Environment::VERSION < [3, 3, 0, 0]
 require File.join(File.dirname(__FILE__), 'imagebox.rb')
 require File.join(File.dirname(__FILE__), 'penguin.rb')
 require File.join(File.dirname(__FILE__), 'postbox.rb')
@@ -26,14 +25,14 @@ Plugin.create(:"mikutter-uwm-hommage") do
   ) do |opt|
     begin
       # ファイルを選択する
-      filename_tmp = choose_image_file(true)
-
-      if filename_tmp
-        # プレビューを表示
-        widget = Plugin[:gtk].widgetof(opt.widget)
-        widget.add_extra_widget(:image, ImageWidgetFactory.new(filename_tmp))
-        widget.refresh_buttons(false)
-      end
+      choose_image_file(true) { |filename_tmp|
+        if filename_tmp
+          # プレビューを表示
+          widget = Plugin[:gtk].widgetof(opt.widget)
+          widget.add_extra_widget(:image, ImageWidgetFactory.new(filename_tmp))
+          widget.refresh_buttons(false)
+        end
+      }
     end
   end
 

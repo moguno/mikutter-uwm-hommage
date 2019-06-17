@@ -81,15 +81,15 @@ class Gtk::ImageBox
       @image_widget = Gtk::EventBox.new
 
       @image_widget.ssc(:button_press_event) { |w, e|
-        filenames_tmp = choose_image_file(false)
+        choose_image_file(false) { |filenames_tmp|
+          filename = if filenames_tmp
+            filenames_tmp.first
+          else
+            nil
+          end
 
-        filename = if filenames_tmp
-          filenames_tmp.first
-        else
-          nil
-        end
-
-        set_filename(filename)
+          set_filename(filename)
+        }
       }
 
       @image_container.pack_start(@image_widget)

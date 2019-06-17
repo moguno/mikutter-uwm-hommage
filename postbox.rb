@@ -18,6 +18,7 @@ class Gtk::PostBox
     @extra_buttons[slug] = button
   end
 
+
   # ポストボックス下にウィジェットを追加する
   def add_extra_widget(slug, factory)
     if @extra_widgets[slug]
@@ -78,53 +79,6 @@ class Gtk::PostBox
     @extra_box.add(post_box)
   end
 
-  # 投稿処理（3.5系まで）
-  def uwm_post_3_5(text, mediaiolist)
-    @posting = service.post(message: text, mediaiolist: mediaiolist){ |event, msg |
-      case event
-      when :start
-        Delayer.new{ start_post }
-      when :fail
-        Delayer.new{ end_post }
-      when :success
-        Delayer.new{ destroy }
-      end
-    }
-  end
-
-  # 投稿処理
-  def uwm_post(text, mediaiolist)
-    @posting = Plugin[:gtk].compose(
-      current_world,
-      to_display_only? ? nil : @to.first,
-      body: text,
-      visibility: @visibility,
-      mediaiolist: mediaiolist
-    ).next{
-      destroy
-    }.trap{ |err|
-      warn err
-      end_post
-    }
-    start_post
-  end
-
-  # 投稿
-  def post_it
-    if postable?
-      return unless before_post
-      text = widget_post.buffer.text
-      text += UserConfig[:footer] if use_blind_footer?
-      image_widget = self.extra_widget(:image)
-      mediaiolist = image_widget ? image_widget[:factory].files : nil
-
-      if Environment::VERSION < [3, 6, 0, 0]
-        uwm_post_3_5(text, mediaiolist)
-      else
-        uwm_post(text, mediaiolist)
-      end
-    end
-  end
 
   # 投稿開始
   alias start_post_org start_post
@@ -241,6 +195,29 @@ class Gtk::PostBox
   end
 
 
+  # 投稿する
+  def post_it(world: target_world)
+    if postable?
+      return unless before_post(world: world || target_world)
+
+      image_widget = self.extra_widget(:image)
+      mediaiolist = image_widget ? image_widget[:factory].files : nil
+
+      @posting = Plugin[:gtk].compose(
+        world || target_world,
+        to_display_only? ? nil : @to.first,
+        **compose_options,
+	mediaiolist: mediaiolist
+      ).next{
+        destroy
+      }.trap{ |err|
+        warn err
+        end_post
+      }
+      start_post
+    end
+  end
+
   # コンストラクタ
   alias initialize_org initialize
 
@@ -252,13 +229,13 @@ class Gtk::PostBox
 
     add_extra_button(:post_media, Gtk::WebIcon.new(Plugin[:"mikutter-uwm-hommage"].get_skin("image.png"), 16, 16)) { |e|
       # ファイルを選択する
-      filenames_tmp = choose_image_file(true)
-
-      if filenames_tmp
-        # プレビューを表示
-        add_extra_widget(:image, ImageWidgetFactory.new(filenames_tmp))
-        refresh_buttons(false)
-      end
+      choose_image_file(true) { |filenames_tmp|
+        if filenames_tmp
+          # プレビューを表示
+          add_extra_widget(:image, ImageWidgetFactory.new(filenames_tmp))
+          refresh_buttons(false)
+        end
+      }
     }
 
     if @options[:delegated_by]
