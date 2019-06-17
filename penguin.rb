@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-def choose_image_file(multi_select = false)
+def choose_image_file(multi_select = false, &block)
   dialog = Gtk::FileChooserDialog.new("Select Upload Image",
                                       nil,
                                       Gtk::FileChooser::ACTION_OPEN,
@@ -54,13 +54,13 @@ def choose_image_file(multi_select = false)
     end
   }
 
-  filenames = if dialog.run == Gtk::Dialog::RESPONSE_ACCEPT
-    dialog.filenames
-  else
-    filename = nil
-  end
+  dialog.ssc(:response) { |this, e|
+    if e == Gtk::Dialog::RESPONSE_ACCEPT
+      block.call(this.filenames)
+    end
 
-  dialog.destroy
+    this.destroy
+  }
 
-  filenames
+  dialog.show
 end
