@@ -241,5 +241,29 @@ class Gtk::PostBox
     if @options[:delegated_by]
       @options[:delegated_by].give_extra_widgets!(self)
     end
+
+    tag = Plugin[:"mikutter-uwm-hommage"].handler_tag
+    @extra_buttons[:post_media].ssc_atonce(:expose_event) {
+      Plugin[:"mikutter-uwm-hommage"].tap { |plugin|
+        plugin.on_world_change_current(tags: tag) { |world|
+          update_post_media_button_state
+        }
+        plugin.on_world_after_created(tags: tag) { |world|
+          update_post_media_button_state
+        }
+      }
+      false
+    }
+
+    Delayer.new {
+      update_post_media_button_state
+    }
+  end
+
+  def update_post_media_button_state
+    if !@extra_button_area.destroyed?
+      current_world, = Plugin.filtering(:world_current, nil)
+      @extra_buttons[:post_media].sensitive = current_world&.class&.slug == :twitter
+    end
   end
 end
