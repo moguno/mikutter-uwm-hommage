@@ -243,27 +243,38 @@ class Gtk::PostBox
     end
 
     tag = Plugin[:"mikutter-uwm-hommage"].handler_tag
+
     @extra_buttons[:post_media].ssc_atonce(:expose_event) {
-      Plugin[:"mikutter-uwm-hommage"].tap { |plugin|
-        plugin.on_world_change_current(tags: tag) { |world|
-          update_post_media_button_state
-        }
-        plugin.on_world_after_created(tags: tag) { |world|
-          update_post_media_button_state
-        }
+      plugin = Plugin[:"mikutter-uwm-hommage"];
+
+      plugin.on_world_change_current(tags: tag) { |world|
+        update_post_media_button_state(world)
       }
+
+      # 初めてのアカウントはなんでしたか？
+      # あなたの初めてのアカウントは
+      # ワタシにとってはTwitterがそう
+      # だから、on_world_change_currentが発生しない可能性のあるイベントに対して
+      # 今こうしてワークアラウンドを書いていまーすー
+      plugin.on_world_after_created(tags: tag) { |world|
+        current_world, = Plugin.filtering(:world_current, nil)
+        update_post_media_button_state(world)
+      }
+
       false
     }
 
     Delayer.new {
-      update_post_media_button_state
+      current_world, = Plugin.filtering(:world_current, nil)
+      update_post_media_button_state(current_world)
     }
   end
 
-  def update_post_media_button_state
+  # 投稿ボタンの有効・無効の変更
+  def update_post_media_button_state(world)
     if !@extra_button_area.destroyed?
-      current_world, = Plugin.filtering(:world_current, nil)
-      @extra_buttons[:post_media].sensitive = current_world&.class&.slug == :twitter
+      # twitter world以外ではボタンを無効化する
+      @extra_buttons[:post_media].sensitive = world&.class&.slug == :twitter
     end
   end
 end
