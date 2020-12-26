@@ -221,11 +221,11 @@ class Gtk::PostBox
   # コンストラクタ
   alias initialize_org initialize
 
-  def initialize(*args)
+  def initialize(*args, **kwargs)
     @extra_widgets ||= Hash.new
     @extra_buttons ||= Hash.new
 
-    initialize_org(*args)
+    initialize_org(*args, **kwargs)
 
     add_extra_button(:post_media, Gtk::WebIcon.new(Plugin[:"mikutter-uwm-hommage"].get_skin("image.png"), 16, 16)) { |e|
       # ファイルを選択する
