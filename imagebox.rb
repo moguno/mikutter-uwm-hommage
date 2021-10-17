@@ -57,7 +57,7 @@ class Gtk::ImageBox
 
   def widget
     if !@image_container
-      @image_container = Gtk::VBox.new(false)
+      @image_container = Gtk::Box.new(:vertical)
       @image_container.width_request = 100
 
       button_left = Gtk::Button.new.add(Gtk::WebIcon.new(Skin.get_path('arrow_notfollowed.png'), 16, 16))
@@ -92,15 +92,15 @@ class Gtk::ImageBox
         }
       }
 
-      @image_container.pack_start(@image_widget)
+      @image_container.pack_start(@image_widget, expand: true)
  
-      buttonbox = Gtk::HBox.new(false)
+      buttonbox = Gtk::Box.new(:horizontal)
 
-      buttonbox.pack_start(button_left, false)
-      buttonbox.pack_start(button_delete)
-      buttonbox.pack_start(button_right, false)
+      buttonbox.pack_start(button_left, expand: false)
+      buttonbox.pack_start(button_delete, expand: true)
+      buttonbox.pack_start(button_right, expand: false)
 
-      @image_container.pack_start(buttonbox, false)
+      @image_container.pack_start(buttonbox, expand: false)
 
       redraw
     end

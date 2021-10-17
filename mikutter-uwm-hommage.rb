@@ -28,7 +28,7 @@ Plugin.create(:"mikutter-uwm-hommage") do
       choose_image_file(true) { |filename_tmp|
         if filename_tmp
           # プレビューを表示
-          widget = Plugin[:gtk].widgetof(opt.widget)
+          widget = Plugin[:gtk3].widgetof(opt.widget)
           widget.add_extra_widget(:image, ImageWidgetFactory.new(filename_tmp))
           widget.refresh_buttons(false)
         end

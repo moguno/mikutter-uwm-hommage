@@ -12,7 +12,7 @@ class Gtk::PostBox
     button.ssc(:clicked, &clicked)
 
     if !@extra_button_area.destroyed?
-      @extra_button_area.pack_start(button, false)
+      @extra_button_area.add(button)
     end
 
     @extra_buttons[slug] = button
@@ -28,7 +28,7 @@ class Gtk::PostBox
     @extra_widgets[slug] = { :factory => factory, :widget => factory.create(self) }
 
     if !@extra_box.destroyed?
-      @extra_box.pack_start(@extra_widgets[slug][:widget])
+      @extra_box.add(@extra_widgets[slug][:widget])
     end
   end
 
@@ -66,15 +66,12 @@ class Gtk::PostBox
   alias generate_box_org generate_box
 
   def generate_box
-    @extra_box = Gtk::VBox.new(false)
+    @extra_box = Gtk::Box.new :vertical
     post_box = generate_box_org
 
-    # 追加ウィジェットを填めるボックスを追加
-    @extra_button_area = if post_box.is_a?(Gtk::HBox)
-      post_box
-    else
-      post_box.children[0]
-    end
+    # 追加ウィジェットを填めるボックスを追加。
+    # mikutter_gtk3 の generate_box は Gtk::Grid で、一番上が投稿欄。
+    @extra_button_area = post_box.get_child_at(0, 0)
 
     @extra_box.add(post_box)
   end
@@ -203,7 +200,7 @@ class Gtk::PostBox
       image_widget = self.extra_widget(:image)
       mediaiolist = image_widget ? image_widget[:factory].files : nil
 
-      @posting = Plugin[:gtk].compose(
+      @posting = Plugin[:gtk3].compose(
         world || target_world,
         to_display_only? ? nil : @to.first,
         **compose_options,
@@ -244,7 +241,7 @@ class Gtk::PostBox
 
     tag = Plugin[:"mikutter-uwm-hommage"].handler_tag
 
-    @extra_buttons[:post_media].ssc_atonce(:expose_event) {
+    @extra_buttons[:post_media].ssc_atonce(:draw) {
       plugin = Plugin[:"mikutter-uwm-hommage"];
 
       plugin.on_world_change_current(tags: tag) { |world|

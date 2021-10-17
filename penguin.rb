@@ -3,10 +3,10 @@
 def choose_image_file(multi_select = false, &block)
   dialog = Gtk::FileChooserDialog.new("Select Upload Image",
                                       nil,
-                                      Gtk::FileChooser::ACTION_OPEN,
+                                      :open,
                                       nil,
-                                      [Gtk::Stock::CANCEL, Gtk::Dialog::RESPONSE_CANCEL],
-                                      [Gtk::Stock::OPEN, Gtk::Dialog::RESPONSE_ACCEPT])
+                                      [Gtk::Stock::CANCEL, :cancel],
+                                      [Gtk::Stock::OPEN, :accept])
 
   filter = Gtk::FileFilter.new
   filter.name = "Image Files"
@@ -55,7 +55,7 @@ def choose_image_file(multi_select = false, &block)
   }
 
   dialog.ssc(:response) { |this, e|
-    if e == Gtk::Dialog::RESPONSE_ACCEPT
+    if e == Gtk::ResponseType::ACCEPT
       block.call(this.filenames)
     end
 
