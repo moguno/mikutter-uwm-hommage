@@ -18,7 +18,7 @@ Plugin.create(:"mikutter-uwm-hommage") do
   # コマンド
   command(:uwm_hommage,
     name: '画像を添付',
-    condition: lambda{ |opt| true },
+    condition: ->(opt) { opt.world.class.slug == :twitter },
     icon: get_skin("image.png"),
     visible: true,
     role: :postbox
