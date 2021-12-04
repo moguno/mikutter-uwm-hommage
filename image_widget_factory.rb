@@ -79,7 +79,7 @@ class ImageWidgetFactory
     layout.shadow_type = Gtk::ShadowType::NONE
     layout.propagate_natural_width = true
     layout.vscrollbar_policy = :never
-    layout.hscrollbar_policy = :always
+    layout.hscrollbar_policy = :automatic
     layout.add(viewport)
 
     base.pack_start(layout)
