@@ -39,7 +39,7 @@ class ImageWidgetFactory
 
     base = Gtk::HBox.new(false)
     
-    button = Gtk::Button.new.add(Gtk::WebIcon.new(Skin.get('close.png'), 16, 16))
+    button = Gtk::Button.new.add(Gtk::WebIcon.new(Skin.get_path('close.png'), 16, 16))
 
     button.ssc(:clicked) { |e|
       postbox.remove_extra_widget(:image)

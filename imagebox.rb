@@ -60,19 +60,19 @@ class Gtk::ImageBox
       @image_container = Gtk::VBox.new(false)
       @image_container.width_request = 100
 
-      button_left = Gtk::Button.new.add(Gtk::WebIcon.new(Skin.get('arrow_notfollowed.png'), 16, 16))
+      button_left = Gtk::Button.new.add(Gtk::WebIcon.new(Skin.get_path('arrow_notfollowed.png'), 16, 16))
 
       button_left.ssc(:clicked) { |w, e|
         swap_left_image
       }
 
-      button_delete = Gtk::Button.new.add(Gtk::WebIcon.new(Skin.get('close.png'), 16, 16))
+      button_delete = Gtk::Button.new.add(Gtk::WebIcon.new(Skin.get_path('close.png'), 16, 16))
 
       button_delete.ssc(:clicked) { |w, e|
         delete_image
       }
       
-      button_right = Gtk::Button.new.add(Gtk::WebIcon.new(Skin.get('arrow_notfollowing.png'), 16, 16))
+      button_right = Gtk::Button.new.add(Gtk::WebIcon.new(Skin.get_path('arrow_notfollowing.png'), 16, 16))
 
       button_right.ssc(:clicked) { |w, e|
         swap_right_image
