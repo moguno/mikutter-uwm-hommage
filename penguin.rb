@@ -1,12 +1,10 @@
 # -*- coding: utf-8 -*-
 
 def choose_image_file(multi_select = false, &block)
-  dialog = Gtk::FileChooserDialog.new("Select Upload Image",
-                                      nil,
-                                      :open,
-                                      nil,
-                                      [Gtk::Stock::CANCEL, :cancel],
-                                      [Gtk::Stock::OPEN, :accept])
+  dialog = Gtk::FileChooserDialog.new(title: "Select Upload Image",
+                                      action: :open,
+                                      buttons: [[Gtk::Stock::CANCEL, :cancel],
+                                                [Gtk::Stock::OPEN, :accept]])
 
   filter = Gtk::FileFilter.new
   filter.name = "Image Files"
