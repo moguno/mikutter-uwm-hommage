@@ -37,9 +37,9 @@ class ImageWidgetFactory
 
     @image_boxes = []
 
-    base = Gtk::HBox.new(false)
+    base = Gtk::Box.new(:horizontal)
     
-    button = Gtk::Button.new.add(Gtk::WebIcon.new(Skin.get('close.png'), 16, 16))
+    button = Gtk::Button.new.add(Gtk::WebIcon.new(Skin.get_path('close.png'), 16, 16))
 
     button.ssc(:clicked) { |e|
       postbox.remove_extra_widget(:image)
@@ -63,12 +63,12 @@ class ImageWidgetFactory
       left_box = image_box
     }
 
-    base.pack_start(button, false)
+    base.pack_start(button, expand: false)
 
-    box = Gtk::HBox.new(false, 3)
+    box = Gtk::Box.new(:horizontal, 3)
 
     image_area.each { |area|
-      box.pack_start(area, false)
+      box.pack_start(area, expand: false)
     }
     
     viewport = Gtk::Viewport.new(nil, nil)
@@ -77,8 +77,9 @@ class ImageWidgetFactory
 
     layout = Gtk::ScrolledWindow.new
     layout.shadow_type = Gtk::ShadowType::NONE
-    layout.vscrollbar_policy = Gtk::POLICY_NEVER
-    layout.hscrollbar_policy = Gtk::POLICY_ALWAYS
+    layout.propagate_natural_width = true
+    layout.vscrollbar_policy = :never
+    layout.hscrollbar_policy = :automatic
     layout.add(viewport)
 
     base.pack_start(layout)

@@ -3,7 +3,7 @@ slug: :mikutter-uwm-hommage
 depends:
   mikutter: 3.9.0
   plugin:
-  - gtk
+  - gtk3
 version: 0.5.1
 author: moguno
 name: update_with_media GUI no hazuga...
